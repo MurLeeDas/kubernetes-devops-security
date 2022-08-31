@@ -7,7 +7,7 @@ pipeline {
               sh "mvn clean package -DskipTests=true"
               archive 'target/*.jar' 
             }
-        }
+      }
       stage('Unit Tests - JUnit and Jacoco') {
             steps {
               sh "mvn test"
@@ -18,7 +18,7 @@ pipeline {
                 jacoco execPattern: 'target/jacoco.exec'
               }
             }    
-    }
+      }
       stage('Docker Build and Push') {
         steps {
           withDockerRegistry([credentialsId: "docker-hub", url: ""]) {
@@ -28,6 +28,14 @@ pipeline {
           }
         }
       }
+    stage('Kubernetes Deployment - DEV') {
+      steps {
+        withKubeConfig([credentialsId: 'kubeconfig']) {
+          sh "sed -i 's#replace#murlee005/numeric-app:${GIT_COMMIT}#g' k8s_deployment_service.yaml"
+          sh "kubectl apply -f k8s_deployment_service.yaml"
+        }
+      }
+    }
 
   }
 }
